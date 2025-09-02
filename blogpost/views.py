@@ -42,15 +42,21 @@ def bookingView(request):
         serializer = userSerializer(user, data=userData, partial=True)
         if serializer.is_valid():
             serializer.save()
-            Bookingadd(userData,bookingData)
-            return Response({"message": "User updated", "data": serializer.data})
+            try:
+                Bookingadd(userData,bookingData)
+            except:
+                return Response(serializer.errors, status=400)        
+            return Response({"message": "User updated and booked", "data": serializer.data})
         return Response(serializer.errors, status=400)    
 
     except User.DoesNotExist:
         serializer = userSerializer(data=userData)
         if serializer.is_valid():
             serializer.save()
-            Bookingadd(userData,bookingData)
+            try:
+                Bookingadd(userData,bookingData)
+            except:
+                return Response(serializer.errors, status=400)              
             return Response({"message": "User Created and booked", "data": serializer.data})
         return Response(serializer.errors, status=400)    
 
@@ -71,5 +77,3 @@ def Bookingadd(userData,bookingData):
     if serializer.is_valid():
         serializer.save()
         return 
-    print(serializer.errors)
-    return     
