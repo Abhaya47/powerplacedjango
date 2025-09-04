@@ -72,8 +72,18 @@ def Bookingadd(userData,bookingData):
         "startDate":bookingData["startDate"],
         "endDate":endDate
     }
+    try:
+        availability = Booking.objects.get(
+            startDate__gte=tempData["startDate"], 
+            endDate__lte=tempData["endDate"]
+        )
+        raise ValidationError("Date is not available")
 
-    serializer = bookingSerializer(data=tempData)
-    if serializer.is_valid():
-        serializer.save()
-        return 
+    except Booking.DoesNotExist:
+        serializer = bookingSerializer(data=tempData)
+        if serializer.is_valid():
+            serializer.save()
+            return serializer.data
+        else:
+            raise ValidationError(serializer.errors)
+    
