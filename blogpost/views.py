@@ -39,26 +39,20 @@ def bookingView(request):
     }
     try:
         user= User.objects.get(email=userData["email"])
-        serializer = userSerializer(user, data=userData, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            try:
-                Bookingadd(userData,bookingData)
-            except:
-                return Response(serializer.errors, status=400)        
-            return Response({"message": "User updated and booked", "data": serializer.data})
-        return Response(serializer.errors, status=400)    
-
+        # serializer = userSerializer(user, data=userData, partial=True)
+        # if !serializer.is_valid():
+        #     return Response(serializer.errors, status=400)
+        # serializer.save()                 
     except User.DoesNotExist:
         serializer = userSerializer(data=userData)
-        if serializer.is_valid():
-            serializer.save()
-            try:
-                Bookingadd(userData,bookingData)
-            except:
-                return Response(serializer.errors, status=400)              
-            return Response({"message": "User Created and booked", "data": serializer.data})
-        return Response(serializer.errors, status=400)    
+        if not (serializer.is_valid()):
+            return Response({"message" : "User info not clear"}, status=400)    
+        serializer.save()
+    try:
+        Bookingadd(userData,bookingData)
+        return Response({"message" : "Booked"})
+    except:
+        return Response({"message" : "Some problem in booking data check date and package"}, status=400)
 
 def Bookingadd(userData,bookingData):
     user= User.objects.get(email=userData["email"])
