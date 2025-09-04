@@ -28,17 +28,8 @@ class packageView(generics.ListAPIView):
 def bookingView(request):
     [...]
     data = request.data
-    userData={
-        "name":data['name'],
-        "email":data['email'],
-        "phone":data['phone']
-    }
-    bookingData={
-        "title":data["packageTitle"],
-        "startDate":data["startDate"]
-    }
     try:
-        user= User.objects.get(email=userData["email"])
+        user= User.objects.get(email=data['email'])
         # serializer = userSerializer(user, data=userData, partial=True)
         # if !serializer.is_valid():
         #     return Response(serializer.errors, status=400)
@@ -48,36 +39,36 @@ def bookingView(request):
         if not (serializer.is_valid()):
             return Response({"message" : "User info not clear"}, status=400)    
         serializer.save()
-    try:
-        Bookingadd(userData,bookingData)
-        return Response({"message" : "Booked"})
-    except:
-        return Response({"message" : "Some problem in booking data check date and package"}, status=400)
-
-def Bookingadd(userData,bookingData):
-    user= User.objects.get(email=userData["email"])
-    package= Package.objects.get(packageTitle=bookingData["title"])
-    tmp=int(package.duration-1)
-    startDate = datetime.strptime(bookingData["startDate"], "%Y-%m-%d").date()    
-    endDate=startDate + timedelta(days=tmp)
-    tempData={
-        "userID": user.userID,    
-        "packageID": package.packageID, 
-        "startDate":bookingData["startDate"],
-        "endDate":endDate
+    
+    bookingData={
+        "title":data["packageTitle"],
+        "startDate":data["startDate"]
     }
     try:
+        Bookingadd(data['email'],bookingData)
+        return Response({"message" : "Booked"})
+    except:
+        return Response({"message" : "Some problem in booking data. check date and package"}, status=400)
+
+def Bookingadd(userData,bookingData):
+    user= User.objects.get(email=userData)
+    package= Package.objects.get(packageTitle=bookingData["title"])
+    endDate = datetime.strptime(bookingData["startDate"], "%Y-%m-%d").date()+timedelta(days=int(package.duration-1)) 
+    try:
         availability = Booking.objects.get(
-            startDate__gte=tempData["startDate"], 
-            endDate__lte=tempData["endDate"]
+            startDate__gte=bookingData["startDate"], 
+            endDate__lte=endDate
         )
         raise ValidationError("Date is not available")
 
     except Booking.DoesNotExist:
-        serializer = bookingSerializer(data=tempData)
+        serializer = bookingSerializer(data={
+            "userID": user.userID,    
+            "packageID": package.packageID, 
+            "startDate":bookingData["startDate"],
+            "endDate":endDate})
         if serializer.is_valid():
             serializer.save()
             return serializer.data
-        else:
-            raise ValidationError(serializer.errors)
+        raise ValidationError(serializer.errors)
     
